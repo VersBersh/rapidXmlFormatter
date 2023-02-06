@@ -1,0 +1,131 @@
+
+##############
+#  DEFAULTS  #
+##############
+ARCH = x64
+CONF = debug
+LIB = true
+SANITIZE = false
+
+
+#############
+#  SOURCES  #
+#############
+SRC_DIR = .
+
+SRC_FILES = xmlFmt.cpp
+
+_OBJ_FILES = $(SRC_FILES:.cpp=.o)
+
+
+##################
+#  ARCHITECTURE  #
+##################
+_ENV = C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build
+
+!IF "$(ARCH)" == "x86"
+ENV = "$(_ENV)\vcvars32.bat"
+!ELSE  # ARCH == x64
+ENV = "$(_ENV)\vcvars64.bat"
+!ENDIF
+
+
+!IF "$(CONF)" == "release" && "$(ARCH)" == "x86"
+OUTDIR = .\build\release\x86
+ # !HACK!: prepend the directory to the obj files by
+ # substituting each <space> with <space><directory>.
+ # Basically, nmake sucks. It can't even exapnd macros in
+ # the substitution step.
+OBJ_FILES = $(OUTDIR)\$(_OBJ_FILES: = .\build\release\x86\)
+
+!ELSEIF "$(CONF)" == "release" && "$(ARCH)" == "x86"
+OUTDIR = .\build\debug\x86
+OBJ_FILES = $(OUTDIR)\$(_OBJ_FILES: = .\build\debug\x86\)
+
+
+!ELSEIF "$(CONF)" == "release" && "$(ARCH)" == "x64"
+OUTDIR = .\build\release\x64
+OBJ_FILES = $(OUTDIR)\$(_OBJ_FILES: = .\build\release\x64\)
+
+!ELSE  # conf=debug, arch=x64
+OUTDIR = .\build\debug\x64
+OBJ_FILES = $(OUTDIR)\$(_OBJ_FILES: = .\build\debug\x64\)
+!ENDIF
+
+
+####################
+#  COMPILER FLAGS  #
+####################
+CXX = cl
+
+CXXFLAGS_GENERAL = /W4 \
+                   /std:c++17 \
+                   /EHsc \
+                   /Zi \
+                   /Fd$(OUTDIR)\xmlFmt.pdb \
+                   /Qspectre
+
+
+CXXFLAGS_RELEASE = /O2 \
+                   /DNDEBUG
+
+CXXFLAGS_DEBUG = /Od \
+                 /D_SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING
+
+!IF "$(SANITIZE)" == "true"
+SANITIZE_FLAG = /fsanitize=address
+!ELSE
+SANITIZE_FLAG =
+!ENDIF
+
+##################
+#  LINKER FLAGS  #
+##################
+LINK = link
+
+LDFLAGS_GENERAL = /PDB:$(OUTDIR)\xmlFmt.pdb
+
+# ref: # https://www.wintellect.com/correctly-creating-native-c-release-build-pdbs/
+LDFLAGS_RELEASE = /OPT:REF /OPT:ICF
+
+LDFLAGS_DEBUG = /DEBUG
+
+
+###################
+#  CONFIGURATION  #
+###################
+!IF "$(CONF)" == "release"
+CXXFLAGS = $(CXXFLAGS_GENERAL) $(CXXFLAGS_RELEASE)
+LDFLAGS = $(LDFLAGS_GENERAL) $(LDFLAGS_RELEASE)
+
+!ELSE
+CXXFLAGS = $(CXXFLAGS_GENERAL) $(CXXFLAGS_DEBUG)
+LDFLAGS = $(LDFLAGS_GENERAL) $(LDFLAGS_DEBUG)
+!ENDIF
+
+
+!IF "$(LIB)" == "false"
+OUT = /OUT:$(OUTDIR)/rapidXmlFormatter.exe
+
+!ELSE
+OUT = /DLL /OUT:$(OUTDIR)\rapidXmlFormatter.dll
+!ENDIF
+
+
+#############
+#  RECIPES  #
+#############
+
+SUFFIXES: .o .cpp
+
+clean:
+	if exist "$(MAKEDIR)\build" rmdir "$(MAKEDIR)\build" /S /Q
+
+
+{$(SRC_DIR)}.cpp{$(OUTDIR)}.o:
+    if not exist $(OUTDIR) mkdir $(OUTDIR)
+    $(ENV) && $(CXX) /c $(CXXFLAGS) $(IGNORED_WARNINGS) $(SANITIZE_FLAG) /Fo$@ $<
+
+
+build: $(OBJ_FILES)
+    $(ENV) && $(LINK) $(LDFLAGS) $** $(OUT)
