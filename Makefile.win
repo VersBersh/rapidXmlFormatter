@@ -13,7 +13,7 @@ SANITIZE = false
 #############
 SRC_DIR = .
 
-SRC_FILES = xmlFmt.cpp
+SRC_FILES = rapidXmlFormatter.cpp
 
 _OBJ_FILES = $(SRC_FILES:.cpp=.o)
 

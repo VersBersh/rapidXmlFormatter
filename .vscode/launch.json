@@ -1,0 +1,16 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Debug (Win)",
+            "type": "cppvsdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/build/debug/x64/rapidXmlFormatter.exe",
+            "symbolSearchPath": "${workspaceFolder}/build/debug/x64/",
+            "stopAtEntry": false,
+            "cwd": "${fileDirname}",
+            "externalConsole": false,
+            "requireExactSource": true,
+        }
+    ]
+}

@@ -57,3 +57,20 @@ extern "C"
         return;
     }
 }
+
+#if !defined(NDEBUG)
+int main()
+{
+    auto s = "<w:x><w:s>yyy</w:s><w:t xml:space=\"preserve\">  </w:t></w:x>";
+    auto ln = strnlen_s(s, 100);
+    char *p = new char[ln+1];
+    std::strncpy(p, s, ln + 1);
+    p[ln] = 0;
+
+    rapidxml::xml_document<> doc;
+    doc.parse<0>(p);
+
+    delete[] s;
+
+}
+#endif
